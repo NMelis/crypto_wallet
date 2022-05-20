@@ -1,0 +1,3 @@
+[submodule "flow-wallet-api"]
+	path = flow-wallet-api
+	url = https://github.com/flow-hydraulics/flow-wallet-api.git

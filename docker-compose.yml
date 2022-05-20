@@ -1,0 +1,61 @@
+---
+
+# Default compose file for development and production.
+# Should be used directly in development.
+# Automatically loads `docker-compose.override.yml` if it exists.
+# No extra steps required.
+# Should be used together with `docker/docker-compose.prod.yml`
+# in production.
+
+version: "3.8"
+services:
+  redis:
+    image: "redis:alpine"
+    networks:
+      - webnet
+
+  db:
+    image: "postgres:13-alpine"
+    restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - webnet
+    env_file: ./config/.env
+
+  web:
+    <<: &web
+      # Image name is changed in production:
+      image: "crypto-wallet:dev"
+      build:
+        target: development_build
+        context: .
+        dockerfile: ./docker/django/Dockerfile
+        args:
+          DJANGO_ENV: development
+        cache_from:
+          - "crypto-wallet:dev"
+          - "crypto-wallet:latest"
+          - "*"
+
+      volumes:
+        - django-static:/var/www/django/static
+      depends_on:
+        - db
+        - redis
+      networks:
+        - webnet
+      env_file: ./config/.env
+      environment:
+        DJANGO_DATABASE_HOST: db
+
+    command: python -Wd manage.py runserver 0.0.0.0:8000
+
+
+networks:
+  # Network for your internals, use it by default:
+  webnet:
+
+volumes:
+  pgdata:
+  django-static:
